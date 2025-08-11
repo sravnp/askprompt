@@ -1,11 +1,11 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Send, Sparkles, Bot, User, Copy, CheckCircle2 } from "lucide-react";
+import { Send, Sparkles, Bot, User, Clipboard } from "lucide-react";
 
 interface ChatMessage {
   id: string;
@@ -75,7 +75,12 @@ const PromptAssistantPage = () => {
     scrollToBottom();
   }, [messages]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+const lastAiId = useMemo(() => {
+  const ai = messages.filter((m) => m.type === 'ai');
+  return ai.length ? ai[ai.length - 1].id : null;
+}, [messages]);
+
+const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!userInput.trim()) {
@@ -148,8 +153,8 @@ const PromptAssistantPage = () => {
       setCopiedId(messageId);
       setTimeout(() => setCopiedId(null), 2000);
       toast({
-        title: "Copied to clipboard!",
-        description: "The prompt has been copied to your clipboard."
+        title: "Copied!",
+        duration: 2000
       });
     } catch (error) {
       toast({
@@ -223,18 +228,15 @@ const PromptAssistantPage = () => {
                     >
                       <p className="whitespace-pre-wrap">{message.content}</p>
                       
-                      {message.type === 'ai' && (
+                      {message.type === 'ai' && message.id === lastAiId && (
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="absolute top-2 right-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 hover:bg-background/10"
+                          aria-label="Copy prompt"
+                          className="absolute top-2 right-2 h-8 w-8 p-0 text-muted-foreground hover:text-primary focus-visible:ring-2 focus-visible:ring-primary"
                           onClick={() => copyToClipboard(message.content, message.id)}
                         >
-                          {copiedId === message.id ? (
-                            <CheckCircle2 className="w-3 h-3" />
-                          ) : (
-                            <Copy className="w-3 h-3" />
-                          )}
+                          <Clipboard className="w-5 h-5" />
                         </Button>
                       )}
                     </div>
