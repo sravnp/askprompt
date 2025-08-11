@@ -14,6 +14,21 @@ interface ChatMessage {
   timestamp: Date;
 }
 
+// About-intent detection and preset response
+const normalizeInput = (str: string) => str.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+
+const isAboutIntent = (input: string) => {
+  const q = normalizeInput(input);
+  const mentionsBrand = q.includes('quickprompt') || q.includes('askprompt');
+  if ((q.includes('tell me') || q.includes('about') || q.includes('who are you') || q.includes('who r u')) && q.includes('yourself')) return true;
+  if ((q.includes('this website') || q.includes('this site') || q.includes('this app') || q.includes('this application')) && (q.includes('about') || q.includes('what is'))) return true;
+  if (mentionsBrand && (q.includes('what is') || q.includes('about') || q.includes('who developed') || q.includes('who built') || q.includes('who made'))) return true;
+  if ((q.includes('who developed') || q.includes('who built') || q.includes('who made')) && (q.includes('this') || mentionsBrand)) return true;
+  return false;
+};
+
+const ABOUT_RESPONSE = "Developed by: Sravan Penugonda. QuickPrompt is an AI-powered prompt discovery and enhancement tool that helps users find, refine, and save high-quality prompts for any task. Its purpose is to make prompt crafting fast, clear, and effective for Lovable.dev, ChatGPT, Claude, and other AI tools. You can start exploring prompts now!";
+
 const PromptAssistantPage = () => {
   const [userInput, setUserInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -79,8 +94,22 @@ const PromptAssistantPage = () => {
       timestamp: new Date()
     };
 
+    const inputValue = userInput;
     setMessages(prev => [...prev, newUserMessage]);
     setUserInput("");
+
+    // Preset 'about' intent response
+    if (isAboutIntent(inputValue)) {
+      const aiResponse: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        type: 'ai',
+        content: ABOUT_RESPONSE,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, aiResponse]);
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -91,7 +120,7 @@ const PromptAssistantPage = () => {
       const aiResponse: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'ai',
-        content: `Create a detailed and specific prompt for [YOUR TASK: ${userInput}]. Include: [CONTEXT: relevant background information], [OBJECTIVES: clear goals and expected outcomes], [CONSTRAINTS: any limitations or requirements], [FORMAT: desired output structure], and [EXAMPLES: if applicable]. Be specific about tone, style, and any technical requirements needed for optimal AI response.`,
+        content: `Create a detailed and specific prompt for [YOUR TASK: ${inputValue}]. Include: [CONTEXT: relevant background information], [OBJECTIVES: clear goals and expected outcomes], [CONSTRAINTS: any limitations or requirements], [FORMAT: desired output structure], and [EXAMPLES: if applicable]. Be specific about tone, style, and any technical requirements needed for optimal AI response.`,
         timestamp: new Date()
       };
 
